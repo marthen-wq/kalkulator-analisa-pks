@@ -448,5 +448,5 @@ console.log("1. runAllTests()    - Jalankan semua test");
 console.log("2. quickDemo()      - Demo perhitungan Optimis\n");
 
 // Uncomment salah satu untuk run:
-// runAllTests();
-quickDemo();
+runAllTests();
+// quickDemo();
