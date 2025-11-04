@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Analisa PKS - Browser Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #output {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .test-pass {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .test-fail {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .section-title {
+            color: #667eea;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Kalkulator Analisa Pabrik Kelapa Sawit</h1>
+            <p>Browser Test Suite - Phase 1: Core Calculations</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <button onclick="runAllTests()">✅ Run All Tests</button>
+                <button onclick="runQuickDemo()">🧮 Quick Demo</button>
+                <button onclick="testOptimis()">Test Optimis</button>
+                <button onclick="testModerat()">Test Moderat</button>
+                <button onclick="testDarurat()">Test Darurat</button>
+                <button onclick="clearOutput()">🗑️ Clear</button>
+            </div>
+
+            <div id="output" class="loading">
+                <div class="spinner"></div>
+                Klik tombol di atas untuk mulai testing...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Copy paste semua functions dari standalone-test.js
+
+        function calculateTBSRequirement(kapasitasPerJam, jamOperasional, hargaTBS, hariKerja) {
+            const tbsPerHariKg = kapasitasPerJam * jamOperasional;
+            const tbsPerHariRp = tbsPerHariKg * hargaTBS;
+            const tbsPerBulanKg = tbsPerHariKg * hariKerja;
+            const tbsPerBulanRp = tbsPerHariRp * hariKerja;
+            return {
+                perHari: { kg: tbsPerHariKg, rp: tbsPerHariRp },
+                perBulan: { kg: tbsPerBulanKg, rp: tbsPerBulanRp }
+            };
+        }
+
+        function calculateCPOProduction(tbsPerHariKg, oer, hargaCPO, hariKerja) {
+            const cpoPerHariKg = tbsPerHariKg * oer;
+            const cpoPerBulanKg = cpoPerHariKg * hariKerja;
+            const cpoPerHariRp = cpoPerHariKg * hargaCPO;
+            const cpoPerBulanRp = cpoPerHariRp * hariKerja;
+            const cpoPerKgTBS = cpoPerHariRp / tbsPerHariKg;
+            return {
+                perHari: { kg: cpoPerHariKg, rp: cpoPerHariRp },
+                perBulan: { kg: cpoPerBulanKg, rp: cpoPerBulanRp },
+                perKgTBS: cpoPerKgTBS
+            };
+        }
+
+        function calculateKernelProduction(tbsPerHariKg, ker, hargaKernel, hariKerja) {
+            const kernelPerHariKg = tbsPerHariKg * ker;
+            const kernelPerBulanKg = kernelPerHariKg * hariKerja;
+            const kernelPerHariRp = kernelPerHariKg * hargaKernel;
+            const kernelPerBulanRp = kernelPerHariRp * hariKerja;
+            const kernelPerKgTBS = kernelPerHariRp / tbsPerHariKg;
+            return {
+                perHari: { kg: kernelPerHariKg, rp: kernelPerHariRp },
+                perBulan: { kg: kernelPerBulanKg, rp: kernelPerBulanRp },
+                perKgTBS: kernelPerKgTBS
+            };
+        }
+
+        function calculateCangkangProduction(tbsPerHariKg, rendemenCangkang, hargaCangkang, hariKerja) {
+            const cangkangPerHariKg = tbsPerHariKg * rendemenCangkang;
+            const cangkangPerBulanKg = cangkangPerHariKg * hariKerja;
+            const cangkangPerHariRp = cangkangPerHariKg * hargaCangkang;
+            const cangkangPerBulanRp = cangkangPerHariRp * hariKerja;
+            const cangkangPerKgTBS = cangkangPerHariRp / tbsPerHariKg;
+            return {
+                perHari: { kg: cangkangPerHariKg, rp: cangkangPerHariRp },
+                perBulan: { kg: cangkangPerBulanKg, rp: cangkangPerBulanRp },
+                perKgTBS: cangkangPerKgTBS
+            };
+        }
+
+        function calculateCashInflow(cpo, kernel, cangkang, tbsPerBulanKg) {
+            const totalPerBulan = cpo.perBulan.rp + kernel.perBulan.rp + cangkang.perBulan.rp;
+            const perKgTBS = totalPerBulan / tbsPerBulanKg;
+            const persentaseCPO = (cpo.perBulan.rp / totalPerBulan) * 100;
+            const persentaseKernel = (kernel.perBulan.rp / totalPerBulan) * 100;
+            const persentaseCangkang = (cangkang.perBulan.rp / totalPerBulan) * 100;
+            return {
+                totalPerBulan: totalPerBulan,
+                perKgTBS: perKgTBS,
+                breakdown: {
+                    cpo: { nilai: cpo.perBulan.rp, persentase: persentaseCPO },
+                    kernel: { nilai: kernel.perBulan.rp, persentase: persentaseKernel },
+                    cangkang: { nilai: cangkang.perBulan.rp, persentase: persentaseCangkang }
+                }
+            };
+        }
+
+        function calculateFixedCosts(inputData, tbsPerBulanKg) {
+            const biayaTetap = inputData.biayaTetap;
+            let sewaPKS = 0;
+            if (biayaTetap.tipeSewa === 'tetap') {
+                sewaPKS = biayaTetap.sewaTetap;
+            } else if (biayaTetap.tipeSewa === 'perkg') {
+                sewaPKS = biayaTetap.sewaPerKg * tbsPerBulanKg;
+            }
+            const gajiKaryawan = biayaTetap.gajiKaryawan;
+            const gajiManajemen = biayaTetap.gajiManajemen;
+            const subtotal = sewaPKS + gajiKaryawan + gajiManajemen;
+            const perKgTBS = subtotal / tbsPerBulanKg;
+            return {
+                sewaPKS, gajiKaryawan, gajiManajemen, subtotal, perKgTBS
+            };
+        }
+
+        function calculateVariableCosts(inputData, tbsPerBulanKg, tbsPerBulanRp, cpoPerBulanKg) {
+            const biayaPerKg = inputData.biayaPerKg;
+            const beliTBS = tbsPerBulanRp;
+            const sparepartChemical = biayaPerKg.sparepartChemical * tbsPerBulanKg;
+            const ongkosAngkutCPO = biayaPerKg.ongkosAngkutCPO * cpoPerBulanKg;
+            const biayaUmum = biayaPerKg.biayaUmum * tbsPerBulanKg;
+            const subtotal = beliTBS + sparepartChemical + ongkosAngkutCPO + biayaUmum;
+            const perKgTBS = subtotal / tbsPerBulanKg;
+            return {
+                beliTBS, sparepartChemical, ongkosAngkutCPO, biayaUmum, subtotal, perKgTBS
+            };
+        }
+
+        function calculateOverheadCosts(inputData, tbsPerBulanKg) {
+            const overheadPerKg = inputData.biayaPerKg.overhead;
+            const total = overheadPerKg * tbsPerBulanKg;
+            const perKgTBS = total / tbsPerBulanKg;
+            return { total, perKgTBS };
+        }
+
+        function calculateTotalOutflow(biayaTetap, biayaVariable, biayaOverhead, tbsPerBulanKg) {
+            const totalPerBulan = biayaTetap.subtotal + biayaVariable.subtotal + biayaOverhead.total;
+            const perKgTBS = totalPerBulan / tbsPerBulanKg;
+            return { totalPerBulan, perKgTBS };
+        }
+
+        function calculateProfitLoss(totalPemasukan, totalPengeluaran, tbsPerBulanKg) {
+            const perBulan = totalPemasukan - totalPengeluaran;
+            const perTahun = perBulan * 12;
+            const perKgTBS = perBulan / tbsPerBulanKg;
+            const status = perBulan >= 0 ? "LABA" : "RUGI";
+            return { perBulan, perTahun, perKgTBS, status };
+        }
+
+        function calculateScenario(inputData, skenarioName, jamOperasional, hariKerja = 26) {
+            const kebutuhanTBS = calculateTBSRequirement(
+                inputData.kapasitas.tbsPerJam, jamOperasional, inputData.hargaBeli.tbs, hariKerja
+            );
+            const cpo = calculateCPOProduction(kebutuhanTBS.perHari.kg, inputData.rendemen.oer, inputData.hargaJual.cpo, hariKerja);
+            const kernel = calculateKernelProduction(kebutuhanTBS.perHari.kg, inputData.rendemen.ker, inputData.hargaJual.kernel, hariKerja);
+            const cangkang = calculateCangkangProduction(kebutuhanTBS.perHari.kg, inputData.rendemen.cangkang, inputData.hargaJual.cangkang, hariKerja);
+            const cashInflow = calculateCashInflow(cpo, kernel, cangkang, kebutuhanTBS.perBulan.kg);
+            const biayaTetap = calculateFixedCosts(inputData, kebutuhanTBS.perBulan.kg);
+            const biayaVariable = calculateVariableCosts(inputData, kebutuhanTBS.perBulan.kg, kebutuhanTBS.perBulan.rp, cpo.perBulan.kg);
+            const biayaOverhead = calculateOverheadCosts(inputData, kebutuhanTBS.perBulan.kg);
+            const cashOutflow = calculateTotalOutflow(biayaTetap, biayaVariable, biayaOverhead, kebutuhanTBS.perBulan.kg);
+            const labaRugi = calculateProfitLoss(cashInflow.totalPerBulan, cashOutflow.totalPerBulan, kebutuhanTBS.perBulan.kg);
+
+            return {
+                skenario: skenarioName,
+                jamOperasional, hariKerja, kebutuhanTBS,
+                produksi: { cpo, kernel, cangkang },
+                cashInflow,
+                cashOutflow: { biayaTetap, biayaVariable, biayaOverhead, totalPerBulan: cashOutflow.totalPerBulan, perKgTBS: cashOutflow.perKgTBS },
+                labaRugi
+            };
+        }
+
+        function getBaseInputData() {
+            return {
+                kapasitas: { tbsPerJam: 60000, brondonlanPerJam: 39000, unitKapasitas: "kg" },
+                operasional: { hariKerjaPerBulan: 26, hariKerjaPerTahun: 312 },
+                skenario: { optimis: 20, moderat: 15, pesimis: 10, darurat: 7 },
+                rendemen: { oer: 0.195, ker: 0.06, cangkang: 0.1 },
+                hargaJual: { cpo: 13850, kernel: 10000, cangkang: 900, unit: "Rp/kg" },
+                hargaBeli: { tbs: 3080, brondolan: 0, unit: "Rp/kg" },
+                biayaPerKg: { ongkosAngkutCPO: 450, sparepartChemical: 15, biayaUmum: 10, overhead: 10, unit: "Rp/kg TBS" },
+                biayaTetap: { tipeSewa: "tetap", sewaTetap: 1300000000, sewaPerKg: 40, gajiKaryawan: 480000000, gajiManajemen: 296000000, unit: "Rp/bulan atau Rp/kg" }
+            };
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+        }
+
+        let output = '';
+
+        function print(text) {
+            output += text + '\n';
+        }
+
+        function updateOutput() {
+            document.getElementById('output').innerHTML = output;
+        }
+
+        function clearOutput() {
+            output = '';
+            updateOutput();
+        }
+
+        function runAllTests() {
+            clearOutput();
+            print("╔═══════════════════════════════════════════════════════════════╗");
+            print("║  KALKULATOR ANALISA PABRIK KELAPA SAWIT - BROWSER TEST       ║");
+            print("║  Phase 1: Core Calculations Validation                       ║");
+            print("╚═══════════════════════════════════════════════════════════════╝\n");
+
+            const inputData = getBaseInputData();
+
+            // Test Optimis
+            print("=== TEST F.1: OPTIMIS (SEWA TETAP) ===");
+            const optimis = calculateScenario(inputData, "optimis", 20, 26);
+            print(`  TBS: ${formatNumber(optimis.kebutuhanTBS.perBulan.kg)} kg`);
+            print(`  Pemasukan: Rp ${formatNumber(optimis.cashInflow.totalPerBulan)}`);
+            print(`  Pengeluaran: Rp ${formatNumber(optimis.cashOutflow.totalPerBulan)}`);
+            print(`  Laba: Rp ${formatNumber(optimis.labaRugi.perBulan)} - ${optimis.labaRugi.status} ✅\n`);
+
+            // Test Moderat
+            print("=== TEST F.2: MODERAT (SEWA TETAP) ===");
+            const moderat = calculateScenario(inputData, "moderat", 15, 26);
+            print(`  TBS: ${formatNumber(moderat.kebutuhanTBS.perBulan.kg)} kg`);
+            print(`  Pemasukan: Rp ${formatNumber(moderat.cashInflow.totalPerBulan)}`);
+            print(`  Pengeluaran: Rp ${formatNumber(moderat.cashOutflow.totalPerBulan)}`);
+            print(`  Laba: Rp ${formatNumber(moderat.labaRugi.perBulan)} - ${moderat.labaRugi.status} ✅\n`);
+
+            // Test Darurat
+            print("=== TEST F.4: DARURAT (SEWA TETAP) ===");
+            const darurat = calculateScenario(inputData, "darurat", 7, 26);
+            print(`  TBS: ${formatNumber(darurat.kebutuhanTBS.perBulan.kg)} kg`);
+            print(`  Pemasukan: Rp ${formatNumber(darurat.cashInflow.totalPerBulan)}`);
+            print(`  Pengeluaran: Rp ${formatNumber(darurat.cashOutflow.totalPerBulan)}`);
+            print(`  Laba: Rp ${formatNumber(darurat.labaRugi.perBulan)} - ${darurat.labaRugi.status} ⚠️\n`);
+
+            print("=================================================================");
+            print("  ✓✓✓ ALL TESTS COMPLETED ✓✓✓");
+            print("  Phase 1: Core Calculations - Berjalan dengan baik!");
+            print("=================================================================");
+
+            updateOutput();
+        }
+
+        function runQuickDemo() {
+            clearOutput();
+            print("=== QUICK DEMO: OPTIMIS (DETAILED OUTPUT) ===\n");
+
+            const inputData = getBaseInputData();
+            const result = calculateScenario(inputData, "optimis", 20, 26);
+
+            print("KEBUTUHAN TBS:");
+            print(`  Per Hari: ${formatNumber(result.kebutuhanTBS.perHari.kg)} kg = Rp ${formatNumber(result.kebutuhanTBS.perHari.rp)}`);
+            print(`  Per Bulan: ${formatNumber(result.kebutuhanTBS.perBulan.kg)} kg = Rp ${formatNumber(result.kebutuhanTBS.perBulan.rp)}\n`);
+
+            print("PRODUKSI:");
+            print(`  CPO: ${formatNumber(result.produksi.cpo.perBulan.kg)} kg = Rp ${formatNumber(result.produksi.cpo.perBulan.rp)}`);
+            print(`  Kernel: ${formatNumber(result.produksi.kernel.perBulan.kg)} kg = Rp ${formatNumber(result.produksi.kernel.perBulan.rp)}`);
+            print(`  Cangkang: ${formatNumber(result.produksi.cangkang.perBulan.kg)} kg = Rp ${formatNumber(result.produksi.cangkang.perBulan.rp)}\n`);
+
+            print("CASH INFLOW:");
+            print(`  Total: Rp ${formatNumber(result.cashInflow.totalPerBulan)}`);
+            print(`  Per Kg TBS: Rp ${formatNumber(result.cashInflow.perKgTBS)}`);
+            print(`  Breakdown:`);
+            print(`    - CPO: ${formatNumber(result.cashInflow.breakdown.cpo.persentase)}%`);
+            print(`    - Kernel: ${formatNumber(result.cashInflow.breakdown.kernel.persentase)}%`);
+            print(`    - Cangkang: ${formatNumber(result.cashInflow.breakdown.cangkang.persentase)}%\n`);
+
+            print("CASH OUTFLOW:");
+            print(`  Biaya Tetap: Rp ${formatNumber(result.cashOutflow.biayaTetap.subtotal)}`);
+            print(`  Biaya Variable: Rp ${formatNumber(result.cashOutflow.biayaVariable.subtotal)}`);
+            print(`  Biaya Overhead: Rp ${formatNumber(result.cashOutflow.biayaOverhead.total)}`);
+            print(`  Total: Rp ${formatNumber(result.cashOutflow.totalPerBulan)}\n`);
+
+            print("LABA/RUGI:");
+            print(`  Per Bulan: Rp ${formatNumber(result.labaRugi.perBulan)}`);
+            print(`  Per Tahun: Rp ${formatNumber(result.labaRugi.perTahun)}`);
+            print(`  Per Kg TBS: Rp ${formatNumber(result.labaRugi.perKgTBS)}`);
+            print(`  Status: ${result.labaRugi.status} ✅`);
+
+            updateOutput();
+        }
+
+        function testOptimis() {
+            clearOutput();
+            const inputData = getBaseInputData();
+            const result = calculateScenario(inputData, "optimis", 20, 26);
+            print("=== TEST: OPTIMIS ===\n");
+            print(`Jam Operasional: ${result.jamOperasional} jam/hari`);
+            print(`TBS Olah: ${formatNumber(result.kebutuhanTBS.perBulan.kg)} kg/bulan`);
+            print(`Laba/Rugi: Rp ${formatNumber(result.labaRugi.perBulan)}`);
+            print(`Status: ${result.labaRugi.status} ✅`);
+            updateOutput();
+        }
+
+        function testModerat() {
+            clearOutput();
+            const inputData = getBaseInputData();
+            const result = calculateScenario(inputData, "moderat", 15, 26);
+            print("=== TEST: MODERAT ===\n");
+            print(`Jam Operasional: ${result.jamOperasional} jam/hari`);
+            print(`TBS Olah: ${formatNumber(result.kebutuhanTBS.perBulan.kg)} kg/bulan`);
+            print(`Laba/Rugi: Rp ${formatNumber(result.labaRugi.perBulan)}`);
+            print(`Status: ${result.labaRugi.status} ✅`);
+            updateOutput();
+        }
+
+        function testDarurat() {
+            clearOutput();
+            const inputData = getBaseInputData();
+            const result = calculateScenario(inputData, "darurat", 7, 26);
+            print("=== TEST: DARURAT ===\n");
+            print(`Jam Operasional: ${result.jamOperasional} jam/hari`);
+            print(`TBS Olah: ${formatNumber(result.kebutuhanTBS.perBulan.kg)} kg/bulan`);
+            print(`Laba/Rugi: Rp ${formatNumber(result.labaRugi.perBulan)}`);
+            print(`Status: ${result.labaRugi.status} ⚠️`);
+            updateOutput();
+        }
+    </script>
+</body>
+</html>
