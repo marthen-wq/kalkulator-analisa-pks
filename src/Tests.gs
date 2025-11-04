@@ -11,7 +11,7 @@
  * Helper: Format angka dengan pemisah ribuan
  */
 function formatNumber(num) {
-  return num.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+  return num.toLocaleString('id-ID', { maximumFractionDigits: 0 });
 }
 
 
