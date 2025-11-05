@@ -62,9 +62,17 @@ function processCalculation(inputData) {
     // Calculate all scenarios
     const result = calculateAllScenarios(inputData);
 
-    // Store result in cache (6 hours expiration)
-    const cache = CacheService.getScriptCache();
-    cache.put(result.id, JSON.stringify(result), 21600);
+    // Store result in PropertiesService (more reliable than Cache in Web App context)
+    const props = PropertiesService.getScriptProperties();
+    props.setProperty(result.id, JSON.stringify(result));
+
+    // Also store in cache as backup
+    try {
+      const cache = CacheService.getScriptCache();
+      cache.put(result.id, JSON.stringify(result), 21600);
+    } catch (e) {
+      Logger.log('Cache storage failed (not critical): ' + e.toString());
+    }
 
     return {
       success: true,
@@ -87,14 +95,25 @@ function processCalculation(inputData) {
  */
 function getCalculationResult(id) {
   try {
+    // Check PropertiesService first (more reliable)
+    const props = PropertiesService.getScriptProperties();
+    const propData = props.getProperty(id);
+
+    if (propData) {
+      Logger.log('Result found in PropertiesService: ' + id);
+      return JSON.parse(propData);
+    }
+
+    // Fallback to cache
     const cache = CacheService.getScriptCache();
     const cachedData = cache.get(id);
 
     if (cachedData) {
+      Logger.log('Result found in Cache: ' + id);
       return JSON.parse(cachedData);
-    } else {
-      throw new Error('Result not found or expired. Please recalculate.');
     }
+
+    throw new Error('Result not found or expired. Please recalculate.');
   } catch (error) {
     Logger.log('Error in getCalculationResult: ' + error.toString());
     throw error;
