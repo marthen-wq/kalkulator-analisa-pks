@@ -20,20 +20,11 @@ fi
 echo ""
 echo "Step 2: Download semua file terbaru dari GitHub"
 
+curl -o appsscript.json https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/appsscript.json
+echo "✓ appsscript.json downloaded"
+
 curl -o Code.js https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Code.js
 echo "✓ Code.js downloaded"
-
-curl -o UI.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/UI.html
-echo "✓ UI.html downloaded"
-
-curl -o Summary.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Summary.html
-echo "✓ Summary.html downloaded"
-
-curl -o Cashflow.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Cashflow.html
-echo "✓ Cashflow.html downloaded"
-
-curl -o Styles.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Styles.html
-echo "✓ Styles.html downloaded"
 
 curl -o Calculations.js https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Calculations.js
 echo "✓ Calculations.js downloaded"
@@ -43,6 +34,18 @@ echo "✓ DataManager.js downloaded"
 
 curl -o Tests.js https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Tests.js
 echo "✓ Tests.js downloaded"
+
+curl -o Styles.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Styles.html
+echo "✓ Styles.html downloaded"
+
+curl -o UI.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/UI.html
+echo "✓ UI.html downloaded"
+
+curl -o Summary.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Summary.html
+echo "✓ Summary.html downloaded"
+
+curl -o Cashflow.html https://raw.githubusercontent.com/marthen-wq/kalkulator-analisa-pks/claude/palm-oil-factory-calculator-011CUmyoifh2G713pZ1RNFLv/phase2-deployment/Cashflow.html
+echo "✓ Cashflow.html downloaded"
 
 echo ""
 echo "Step 3: Push ke Apps Script"
