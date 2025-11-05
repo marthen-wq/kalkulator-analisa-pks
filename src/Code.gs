@@ -69,6 +69,10 @@ function processCalculation(inputData) {
     const props = PropertiesService.getScriptProperties();
     props.setProperty(result.id, JSON.stringify(result));
 
+    // Also store as LATEST_RESULT for easy access
+    props.setProperty('LATEST_RESULT', result.id);
+    Logger.log('Stored result with ID: ' + result.id + ' and set as LATEST_RESULT');
+
     // Also store in cache as backup
     try {
       const cache = CacheService.getScriptCache();
@@ -93,13 +97,24 @@ function processCalculation(inputData) {
 
 /**
  * getCalculationResult - Retrieve calculation result by ID
- * @param {string} id - Result ID
+ * @param {string} id - Result ID or 'LATEST_RESULT' to get latest
  * @returns {Object} Calculation result
  */
 function getCalculationResult(id) {
   try {
-    // Check PropertiesService first (more reliable)
     const props = PropertiesService.getScriptProperties();
+
+    // If requesting latest result, get the latest ID first
+    if (id === 'LATEST_RESULT') {
+      const latestId = props.getProperty('LATEST_RESULT');
+      if (!latestId) {
+        throw new Error('No recent calculation found. Please perform a calculation first.');
+      }
+      Logger.log('Latest result ID: ' + latestId);
+      id = latestId;
+    }
+
+    // Check PropertiesService first (more reliable)
     const propData = props.getProperty(id);
 
     if (propData) {

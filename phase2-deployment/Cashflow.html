@@ -99,12 +99,17 @@
 
     // Load results from server
     function loadResults() {
-      const resultId = getResultId();
+      let resultId = getResultId();
       console.log('Final result ID:', resultId);
 
+      // If no ID, try to load latest result from server
       if (!resultId) {
-        alert('No result ID found. Please go back and recalculate.');
-        // Don't auto-navigate - let user click back button
+        console.log('No ID found, will request latest result from server');
+        showLoading('Memuat data cashflow terbaru...');
+        google.script.run
+          .withSuccessHandler(onLoadSuccess)
+          .withFailureHandler(onLoadFailure)
+          .getCalculationResult('LATEST_RESULT');
         return;
       }
 
