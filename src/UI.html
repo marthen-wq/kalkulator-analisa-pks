@@ -305,10 +305,11 @@
           console.log('SessionStorage not available:', e);
         }
 
-        // Redirect to Summary page with result ID
-        const targetUrl = '?page=summary&id=' + encodeURIComponent(result.id);
+        // Get base URL and redirect to Summary page
+        const baseUrl = window.location.href.split('?')[0];
+        const targetUrl = baseUrl + '?page=summary&id=' + encodeURIComponent(result.id);
         console.log('Redirecting to:', targetUrl);
-        window.location.href = targetUrl;
+        window.top.location.href = targetUrl;
       } else {
         alert('Error: ' + result.message);
       }

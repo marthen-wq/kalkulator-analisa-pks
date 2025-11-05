@@ -22,12 +22,15 @@
  */
 function doGet(e) {
   const page = e.parameter.page || 'input';
+  const resultId = e.parameter.id || '';
 
   let template;
   if (page === 'summary') {
     template = HtmlService.createTemplateFromFile('Summary');
+    template.resultId = resultId;  // Pass ID to template
   } else if (page === 'cashflow') {
     template = HtmlService.createTemplateFromFile('Cashflow');
+    template.resultId = resultId;  // Pass ID to template
   } else {
     template = HtmlService.createTemplateFromFile('UI');
   }

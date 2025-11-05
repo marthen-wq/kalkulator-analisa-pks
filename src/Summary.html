@@ -102,17 +102,16 @@
 
   <script>
     let results = null;
+    // Get result ID from server-side template variable
+    const RESULT_ID = '<?= resultId ?>';
 
-    // Get result ID from URL or sessionStorage
+    // Get result ID from template variable or sessionStorage fallback
     function getResultId() {
-      console.log('Current URL:', window.location.href);
-      console.log('Search params:', window.location.search);
+      console.log('Result ID from template:', RESULT_ID);
 
-      const urlParams = new URLSearchParams(window.location.search);
-      let id = urlParams.get('id');
-      console.log('ID from URL:', id);
+      let id = RESULT_ID;
 
-      // Fallback to sessionStorage if URL param not available
+      // Fallback to sessionStorage if template variable is empty
       if (!id) {
         try {
           id = sessionStorage.getItem('lastCalculationId');
@@ -131,8 +130,8 @@
       console.log('Final result ID:', resultId);
 
       if (!resultId) {
-        alert('No result ID found');
-        backToInput();
+        alert('No result ID found. Please go back and recalculate.');
+        // Don't auto-navigate - let user click back button
         return;
       }
 
@@ -432,11 +431,22 @@
 
     function viewCashflow() {
       if (!results) return;
-      window.location.href = '?page=cashflow&id=' + encodeURIComponent(results.id);
+      const url = getScriptUrl() + '?page=cashflow&id=' + encodeURIComponent(results.id);
+      console.log('Navigating to cashflow:', url);
+      window.top.location.href = url;
     }
 
     function backToInput() {
-      window.location.href = '?page=input';
+      const url = getScriptUrl() + '?page=input';
+      console.log('Navigating to input:', url);
+      window.top.location.href = url;
+    }
+
+    function getScriptUrl() {
+      // Extract base URL from current location
+      const url = window.location.href;
+      const baseUrl = url.split('?')[0];
+      return baseUrl;
     }
 
     function showLoading(message) {
