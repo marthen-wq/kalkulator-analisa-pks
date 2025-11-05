@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Analisa PKS</title>
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Kalkulator Analisa Pabrik Kelapa Sawit</h1>
+      <p>Analisa Finansial Komprehensif</p>
+    </div>
+
+    <!-- Section 1: Identitas -->
+    <div class="card">
+      <h2>Identitas Analisa</h2>
+      <label>Nama Analisa</label>
+      <input type="text" id="namaAnalisa" placeholder="Contoh: Analisa Q4 2025" required>
+
+      <label>Lokasi Pabrik</label>
+      <input type="text" id="lokasi" placeholder="Contoh: PT BUNGO LIMBUR" required>
+
+      <label>Tanggal Analisa</label>
+      <input type="date" id="tanggal" required>
+    </div>
+
+    <!-- Section 2: Kapasitas -->
+    <div class="card">
+      <h2>Kapasitas Pabrik</h2>
+      <label>Kapasitas TBS per Jam (kg)</label>
+      <input type="number" id="kapasitasTBS" placeholder="60000" value="60000">
+
+      <label>Kapasitas Brondolan per Jam (kg)</label>
+      <input type="number" id="kapasitasBrondolan" placeholder="39000" value="39000" readonly>
+      <small>Otomatis dihitung 65% dari TBS</small>
+
+      <label>Hari Kerja per Bulan</label>
+      <input type="number" id="hariKerja" placeholder="26" value="26" min="20" max="31">
+    </div>
+
+    <!-- Section 3: Skenario Operasional -->
+    <div class="card">
+      <h2>Skenario Operasional (Jam per Hari)</h2>
+      <div class="grid-2col">
+        <div>
+          <label>Optimis</label>
+          <input type="number" id="jamOptimis" value="20" min="1" max="24">
+        </div>
+        <div>
+          <label>Moderat</label>
+          <input type="number" id="jamModerat" value="15" min="1" max="24">
+        </div>
+        <div>
+          <label>Pesimis</label>
+          <input type="number" id="jamPesimis" value="10" min="1" max="24">
+        </div>
+        <div>
+          <label>Darurat</label>
+          <input type="number" id="jamDarurat" value="7" min="1" max="24">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Rendemen -->
+    <div class="card">
+      <h2>Rendemen (%)</h2>
+      <div class="grid-2col">
+        <div>
+          <label>OER (Oil Extraction Rate)</label>
+          <input type="number" id="oer" placeholder="19.5" step="0.1" value="19.5" min="0" max="100">
+        </div>
+        <div>
+          <label>KER (Kernel Extraction Rate)</label>
+          <input type="number" id="ker" placeholder="6" step="0.1" value="6" min="0" max="100">
+        </div>
+      </div>
+
+      <label>Rendemen Cangkang</label>
+      <input type="number" id="cangkang" placeholder="10" step="0.1" value="10" min="0" max="100">
+    </div>
+
+    <!-- Section 5: Harga Jual -->
+    <div class="card">
+      <h2>Harga Jual (Rp/kg)</h2>
+      <div class="grid-2col">
+        <div>
+          <label>Harga CPO</label>
+          <input type="number" id="hargaCPO" placeholder="13850" value="13850" min="0">
+        </div>
+        <div>
+          <label>Harga Kernel</label>
+          <input type="number" id="hargaKernel" placeholder="10000" value="10000" min="0">
+        </div>
+      </div>
+
+      <label>Harga Cangkang</label>
+      <input type="number" id="hargaCangkang" placeholder="900" value="900" min="0">
+    </div>
+
+    <!-- Section 6: Harga Beli -->
+    <div class="card">
+      <h2>Harga Beli (Rp/kg)</h2>
+      <label>Harga TBS</label>
+      <input type="number" id="hargaTBS" placeholder="3080" value="3080" min="0">
+    </div>
+
+    <!-- Section 7: Biaya Per Kg -->
+    <div class="card">
+      <h2>Biaya Operasional (Rp/kg TBS)</h2>
+      <div class="grid-2col">
+        <div>
+          <label>Ongkos Angkut CPO</label>
+          <input type="number" id="ongkosAngkut" placeholder="450" value="450" min="0">
+        </div>
+        <div>
+          <label>Sparepart & Chemical</label>
+          <input type="number" id="sparepart" placeholder="15" value="15" min="0">
+        </div>
+        <div>
+          <label>Biaya Umum</label>
+          <input type="number" id="biayaUmum" placeholder="10" value="10" min="0">
+        </div>
+        <div>
+          <label>Overhead</label>
+          <input type="number" id="overhead" placeholder="10" value="10" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 8: Biaya Tetap -->
+    <div class="card">
+      <h2>Biaya Tetap</h2>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-sewa="tetap">Sewa Tetap</button>
+        <button class="toggle-btn" data-sewa="perkg">Sewa Per Kg</button>
+      </div>
+
+      <div id="sewa-tetap" class="sewa-section">
+        <label>Sewa Pabrik (Rp/bulan)</label>
+        <input type="number" id="sewaTetap" placeholder="1300000000" value="1300000000" min="0">
+      </div>
+
+      <div id="sewa-perkg" class="sewa-section" style="display:none">
+        <label>Sewa Pabrik (Rp/kg TBS)</label>
+        <input type="number" id="sewaPerKg" placeholder="40" value="40" min="0">
+      </div>
+
+      <div class="grid-2col">
+        <div>
+          <label>Gaji Karyawan (Rp/bulan)</label>
+          <input type="number" id="gajiKaryawan" placeholder="480000000" value="480000000" min="0">
+        </div>
+        <div>
+          <label>Gaji Manajemen (Rp/bulan)</label>
+          <input type="number" id="gajiManajemen" placeholder="296000000" value="296000000" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card action-buttons">
+      <button class="btn-primary" onclick="calculateAnalysis()">Hitung Analisa</button>
+      <button class="btn-secondary" onclick="resetForm()">Reset Form</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="display:none">
+      <div class="spinner"></div>
+      <p id="loading-message">Memproses analisa...</p>
+    </div>
+  </div>
+
+  <script>
+    // Toggle Tipe Sewa
+    document.querySelectorAll('[data-sewa]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const sewa = this.dataset.sewa;
+
+        document.querySelectorAll('[data-sewa]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        if (sewa === 'tetap') {
+          document.getElementById('sewa-tetap').style.display = 'block';
+          document.getElementById('sewa-perkg').style.display = 'none';
+        } else {
+          document.getElementById('sewa-tetap').style.display = 'none';
+          document.getElementById('sewa-perkg').style.display = 'block';
+        }
+      });
+    });
+
+    // Auto-calculate Kapasitas Brondolan (65% dari TBS)
+    document.getElementById('kapasitasTBS').addEventListener('input', function() {
+      const tbsValue = parseFloat(this.value) || 0;
+      document.getElementById('kapasitasBrondolan').value = Math.round(tbsValue * 0.65);
+    });
+
+    // Calculate Analysis Function
+    function calculateAnalysis() {
+      // Validation
+      const namaAnalisa = document.getElementById('namaAnalisa').value.trim();
+      const lokasi = document.getElementById('lokasi').value.trim();
+
+      if (!namaAnalisa) {
+        alert('Mohon isi Nama Analisa');
+        document.getElementById('namaAnalisa').focus();
+        return;
+      }
+
+      if (!lokasi) {
+        alert('Mohon isi Lokasi Pabrik');
+        document.getElementById('lokasi').focus();
+        return;
+      }
+
+      // Collect input data
+      const tipeSewa = document.querySelector('[data-sewa].active').dataset.sewa;
+
+      const inputData = {
+        namaAnalisa: namaAnalisa,
+        lokasi: lokasi,
+        tanggal: document.getElementById('tanggal').value,
+
+        kapasitas: {
+          tbsPerJam: parseInt(document.getElementById('kapasitasTBS').value),
+          brondonlanPerJam: parseInt(document.getElementById('kapasitasBrondolan').value),
+          unitKapasitas: "kg"
+        },
+
+        operasional: {
+          hariKerjaPerBulan: parseInt(document.getElementById('hariKerja').value),
+          hariKerjaPerTahun: parseInt(document.getElementById('hariKerja').value) * 12
+        },
+
+        skenario: {
+          optimis: parseInt(document.getElementById('jamOptimis').value),
+          moderat: parseInt(document.getElementById('jamModerat').value),
+          pesimis: parseInt(document.getElementById('jamPesimis').value),
+          darurat: parseInt(document.getElementById('jamDarurat').value)
+        },
+
+        rendemen: {
+          oer: parseFloat(document.getElementById('oer').value) / 100,
+          ker: parseFloat(document.getElementById('ker').value) / 100,
+          cangkang: parseFloat(document.getElementById('cangkang').value) / 100
+        },
+
+        hargaJual: {
+          cpo: parseInt(document.getElementById('hargaCPO').value),
+          kernel: parseInt(document.getElementById('hargaKernel').value),
+          cangkang: parseInt(document.getElementById('hargaCangkang').value),
+          unit: "Rp/kg"
+        },
+
+        hargaBeli: {
+          tbs: parseInt(document.getElementById('hargaTBS').value),
+          brondolan: 0,
+          unit: "Rp/kg"
+        },
+
+        biayaPerKg: {
+          ongkosAngkutCPO: parseInt(document.getElementById('ongkosAngkut').value),
+          sparepartChemical: parseInt(document.getElementById('sparepart').value),
+          biayaUmum: parseInt(document.getElementById('biayaUmum').value),
+          overhead: parseInt(document.getElementById('overhead').value),
+          unit: "Rp/kg TBS"
+        },
+
+        biayaTetap: {
+          tipeSewa: tipeSewa,
+          sewaTetap: tipeSewa === 'tetap' ? parseInt(document.getElementById('sewaTetap').value) : 0,
+          sewaPerKg: tipeSewa === 'perkg' ? parseInt(document.getElementById('sewaPerKg').value) : 0,
+          gajiKaryawan: parseInt(document.getElementById('gajiKaryawan').value),
+          gajiManajemen: parseInt(document.getElementById('gajiManajemen').value),
+          unit: "Rp/bulan atau Rp/kg"
+        }
+      };
+
+      // Show loading
+      showLoading('Menghitung analisa, mohon tunggu...');
+
+      // Call Google Apps Script function
+      google.script.run
+        .withSuccessHandler(onCalculationSuccess)
+        .withFailureHandler(onCalculationFailure)
+        .processCalculation(inputData);
+    }
+
+    function onCalculationSuccess(result) {
+      hideLoading();
+
+      if (result.success) {
+        // Redirect to Summary page with result ID
+        const url = '<?= getScriptUrl(); ?>?page=summary&id=' + encodeURIComponent(result.id);
+        window.top.location.href = url;
+      } else {
+        alert('Error: ' + result.message);
+      }
+    }
+
+    function onCalculationFailure(error) {
+      hideLoading();
+      alert('Error: ' + error.message);
+      console.error(error);
+    }
+
+    function showLoading(message) {
+      document.getElementById('loading-message').textContent = message;
+      document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    function resetForm() {
+      if (confirm('Reset semua input ke nilai default?')) {
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+          if (input.defaultValue) {
+            input.value = input.defaultValue;
+          }
+        });
+        document.getElementById('namaAnalisa').value = '';
+        document.getElementById('lokasi').value = '';
+        document.getElementById('tanggal').valueAsDate = new Date();
+
+        // Reset toggle to default
+        document.querySelectorAll('[data-sewa]').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-sewa="tetap"]').classList.add('active');
+        document.getElementById('sewa-tetap').style.display = 'block';
+        document.getElementById('sewa-perkg').style.display = 'none';
+
+        // Trigger brondolan calculation
+        document.getElementById('kapasitasTBS').dispatchEvent(new Event('input'));
+      }
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set today's date
+      document.getElementById('tanggal').valueAsDate = new Date();
+
+      // Trigger auto-calculate for brondolan
+      document.getElementById('kapasitasTBS').dispatchEvent(new Event('input'));
+
+      console.log('UI Form initialized');
+    });
+  </script>
+</body>
+</html>

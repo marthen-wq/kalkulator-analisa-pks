@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi Cashflow 12 Bulan</title>
+  <?!= include('Styles'); ?>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Simulasi Cashflow 12 Bulan</h1>
+      <p id="analisa-info">Proyeksi Tahunan dengan Variasi Musiman</p>
+    </div>
+
+    <div class="table-card">
+      <h2>Proyeksi Cashflow per Bulan</h2>
+      <table id="cashflowTable">
+        <thead>
+          <tr>
+            <th>Bulan</th>
+            <th>Skenario</th>
+            <th>Jam/Hari</th>
+            <th>Hari Kerja</th>
+            <th>TBS (ton)</th>
+            <th>Pemasukan</th>
+            <th>Pengeluaran</th>
+            <th>Laba Bersih</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="cashflowTableBody">
+          <tr><td colspan="9" style="text-align:center">Loading...</td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <th colspan="4">TOTAL TAHUNAN</th>
+            <th id="totalTBS">-</th>
+            <th id="totalPemasukan">-</th>
+            <th id="totalPengeluaran">-</th>
+            <th id="totalLaba">-</th>
+            <th id="totalStatus">-</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card full-width">
+        <h2>Trend Laba/Rugi 12 Bulan</h2>
+        <canvas id="chartCashflowTrend"></canvas>
+      </div>
+
+      <div class="chart-card full-width">
+        <h2>Pemasukan vs Pengeluaran per Bulan</h2>
+        <canvas id="chartInOutflowMonthly"></canvas>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn-primary" onclick="saveCashflow()">Simpan Cashflow</button>
+      <button class="btn-secondary" onclick="backToSummary()">Kembali ke Summary</button>
+      <button class="btn-tertiary" onclick="backToInput()">Kembali ke Input</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="display:none">
+      <div class="spinner"></div>
+      <p id="loading-message">Loading...</p>
+    </div>
+  </div>
+
+  <script>
+    let results = null;
+    let cashflowData = [];
+
+    // Get result ID from URL
+    function getResultId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+
+    // Load results from server
+    function loadResults() {
+      const resultId = getResultId();
+      if (!resultId) {
+        alert('No result ID found');
+        backToInput();
+        return;
+      }
+
+      showLoading('Memuat data cashflow...');
+
+      google.script.run
+        .withSuccessHandler(onLoadSuccess)
+        .withFailureHandler(onLoadFailure)
+        .getCalculationResult(resultId);
+    }
+
+    function onLoadSuccess(data) {
+      hideLoading();
+
+      if (!data || !data.cashflow12Bulan) {
+        alert('Data cashflow tidak ditemukan');
+        backToSummary();
+        return;
+      }
+
+      results = data;
+      cashflowData = data.cashflow12Bulan;
+
+      document.getElementById('analisa-info').textContent =
+        data.namaAnalisa + ' - ' + data.lokasi;
+
+      populateTable();
+      createChartTrend();
+      createChartInOutflowMonthly();
+    }
+
+    function onLoadFailure(error) {
+      hideLoading();
+      alert('Error loading data: ' + error.message);
+      console.error(error);
+    }
+
+    function populateTable() {
+      const tbody = document.getElementById('cashflowTableBody');
+      tbody.innerHTML = '';
+
+      cashflowData.forEach(month => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${month.bulan}</td>
+          <td>${capitalizeFirst(month.skenario)}</td>
+          <td>${month.jamOperasional}</td>
+          <td>${month.hariKerja}</td>
+          <td>${formatNumber(month.tbsOlah / 1000)}</td>
+          <td>${formatRupiah(month.pemasukan)}</td>
+          <td>${formatRupiah(month.pengeluaran)}</td>
+          <td class="${month.status === 'LABA' ? 'profit' : 'loss'}">${formatRupiah(month.labaBersih)}</td>
+          <td><span class="${month.status === 'LABA' ? 'status-laba' : 'status-rugi'}">${month.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Calculate totals
+      const totalTBS = cashflowData.reduce((sum, m) => sum + m.tbsOlah, 0);
+      const totalPemasukan = cashflowData.reduce((sum, m) => sum + m.pemasukan, 0);
+      const totalPengeluaran = cashflowData.reduce((sum, m) => sum + m.pengeluaran, 0);
+      const totalLaba = totalPemasukan - totalPengeluaran;
+
+      document.getElementById('totalTBS').textContent = formatNumber(totalTBS / 1000);
+      document.getElementById('totalPemasukan').textContent = formatRupiah(totalPemasukan);
+      document.getElementById('totalPengeluaran').textContent = formatRupiah(totalPengeluaran);
+      document.getElementById('totalLaba').textContent = formatRupiah(totalLaba);
+      document.getElementById('totalStatus').textContent = totalLaba >= 0 ? 'LABA' : 'RUGI';
+      document.getElementById('totalStatus').className = totalLaba >= 0 ? 'status-laba' : 'status-rugi';
+    }
+
+    function createChartTrend() {
+      const ctx = document.getElementById('chartCashflowTrend').getContext('2d');
+
+      const data = cashflowData.map(m => m.labaBersih / 1000000000);
+      const colors = data.map(v => v >= 0 ? '#10b981' : '#ef4444');
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: cashflowData.map(m => m.bulan),
+          datasets: [{
+            label: 'Laba/Rugi (Miliar Rp)',
+            data: data,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: colors,
+            pointBorderColor: colors,
+            pointRadius: 5,
+            pointHoverRadius: 7
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return 'Laba/Rugi: ' + context.parsed.y.toFixed(2) + ' Miliar Rp';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(2);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function createChartInOutflowMonthly() {
+      const ctx = document.getElementById('chartInOutflowMonthly').getContext('2d');
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: cashflowData.map(m => m.bulan),
+          datasets: [
+            {
+              label: 'Pemasukan (Miliar Rp)',
+              data: cashflowData.map(m => m.pemasukan / 1000000000),
+              backgroundColor: '#10b981'
+            },
+            {
+              label: 'Pengeluaran (Miliar Rp)',
+              data: cashflowData.map(m => m.pengeluaran / 1000000000),
+              backgroundColor: '#ef4444'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': ' + context.parsed.y.toFixed(2);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(2);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function formatRupiah(number) {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+      }).format(number);
+    }
+
+    function formatNumber(number) {
+      return new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }).format(number);
+    }
+
+    function capitalizeFirst(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function saveCashflow() {
+      if (!results) return;
+
+      showLoading('Menyimpan cashflow ke Drive...');
+
+      google.script.run
+        .withSuccessHandler(function() {
+          hideLoading();
+          alert('Cashflow berhasil disimpan!');
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          alert('Error: ' + err.message);
+        })
+        .saveResultToDrive(results);
+    }
+
+    function backToSummary() {
+      if (!results) {
+        backToInput();
+        return;
+      }
+      const url = '<?= getScriptUrl(); ?>?page=summary&id=' + encodeURIComponent(results.id);
+      window.top.location.href = url;
+    }
+
+    function backToInput() {
+      window.top.location.href = '<?= getScriptUrl(); ?>';
+    }
+
+    function showLoading(message) {
+      document.getElementById('loading-message').textContent = message;
+      document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadResults();
+    });
+  </script>
+</body>
+</html>
