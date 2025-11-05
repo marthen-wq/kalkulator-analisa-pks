@@ -293,9 +293,22 @@
     function onCalculationSuccess(result) {
       hideLoading();
 
+      console.log('Calculation result:', result);
+      console.log('Result ID:', result.id);
+
       if (result.success) {
+        // Store ID in sessionStorage as backup
+        try {
+          sessionStorage.setItem('lastCalculationId', result.id);
+          console.log('Stored ID in sessionStorage:', result.id);
+        } catch (e) {
+          console.log('SessionStorage not available:', e);
+        }
+
         // Redirect to Summary page with result ID
-        window.location.href = '?page=summary&id=' + encodeURIComponent(result.id);
+        const targetUrl = '?page=summary&id=' + encodeURIComponent(result.id);
+        console.log('Redirecting to:', targetUrl);
+        window.location.href = targetUrl;
       } else {
         alert('Error: ' + result.message);
       }

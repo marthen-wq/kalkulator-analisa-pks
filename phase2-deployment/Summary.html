@@ -103,15 +103,33 @@
   <script>
     let results = null;
 
-    // Get result ID from URL
+    // Get result ID from URL or sessionStorage
     function getResultId() {
+      console.log('Current URL:', window.location.href);
+      console.log('Search params:', window.location.search);
+
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('id');
+      let id = urlParams.get('id');
+      console.log('ID from URL:', id);
+
+      // Fallback to sessionStorage if URL param not available
+      if (!id) {
+        try {
+          id = sessionStorage.getItem('lastCalculationId');
+          console.log('ID from sessionStorage:', id);
+        } catch (e) {
+          console.log('SessionStorage not available:', e);
+        }
+      }
+
+      return id;
     }
 
     // Load results from server
     function loadResults() {
       const resultId = getResultId();
+      console.log('Final result ID:', resultId);
+
       if (!resultId) {
         alert('No result ID found');
         backToInput();
