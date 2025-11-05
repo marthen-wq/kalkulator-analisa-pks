@@ -295,12 +295,11 @@
         backToInput();
         return;
       }
-      const url = '<?= getScriptUrl(); ?>?page=summary&id=' + encodeURIComponent(results.id);
-      window.top.location.href = url;
+      window.location.href = '?page=summary&id=' + encodeURIComponent(results.id);
     }
 
     function backToInput() {
-      window.top.location.href = '<?= getScriptUrl(); ?>';
+      window.location.href = '?page=input';
     }
 
     function showLoading(message) {

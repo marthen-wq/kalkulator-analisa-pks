@@ -295,8 +295,7 @@
 
       if (result.success) {
         // Redirect to Summary page with result ID
-        const url = '<?= getScriptUrl(); ?>?page=summary&id=' + encodeURIComponent(result.id);
-        window.top.location.href = url;
+        window.location.href = '?page=summary&id=' + encodeURIComponent(result.id);
       } else {
         alert('Error: ' + result.message);
       }
