@@ -149,32 +149,56 @@
     }
 
     function onLoadSuccess(data) {
+      console.log('onLoadSuccess called with data:', data);
       hideLoading();
 
-      if (!data || !data.outputData) {
-        alert('Data tidak ditemukan');
-        backToInput();
+      if (!data) {
+        console.error('Data is null or undefined');
+        alert('Data tidak ditemukan (null). Silakan kembali dan hitung ulang.');
+        return;
+      }
+
+      if (!data.outputData) {
+        console.error('Data.outputData is missing:', data);
+        alert('Data tidak lengkap (no outputData). Silakan kembali dan hitung ulang.');
         return;
       }
 
       results = data;
+      console.log('Results stored, populating UI...');
 
       // Populate UI
-      document.getElementById('analisa-info').textContent =
-        data.namaAnalisa + ' - ' + data.lokasi + ' (' + data.tanggal + ')';
+      try {
+        document.getElementById('analisa-info').textContent =
+          data.namaAnalisa + ' - ' + data.lokasi + ' (' + data.tanggal + ')';
 
-      populateKPICards();
-      createChartSkenario();
-      createChartPemasukan();
-      createChartBiaya();
-      createChartInOutflow();
-      populateTable();
+        populateKPICards();
+        createChartSkenario();
+        createChartPemasukan();
+        createChartBiaya();
+        createChartInOutflow();
+        populateTable();
+
+        console.log('UI populated successfully');
+      } catch (e) {
+        console.error('Error populating UI:', e);
+        alert('Error menampilkan data: ' + e.message);
+      }
     }
 
     function onLoadFailure(error) {
       hideLoading();
-      alert('Error loading data: ' + error.message);
-      console.error(error);
+      console.error('Load failure:', error);
+
+      // Show detailed error message
+      const errorMsg = error.message || error.toString();
+      alert('Error loading data: ' + errorMsg + '\n\nSilakan kembali dan hitung ulang.');
+
+      // Log to console for debugging
+      console.log('Error details:', {
+        message: errorMsg,
+        error: error
+      });
     }
 
     function populateKPICards() {

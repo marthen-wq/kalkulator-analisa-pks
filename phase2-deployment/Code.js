@@ -64,21 +64,32 @@ function processCalculation(inputData) {
   try {
     // Calculate all scenarios
     const result = calculateAllScenarios(inputData);
+    const resultJson = JSON.stringify(result);
+    const dataSize = resultJson.length;
 
-    // Store result in PropertiesService (more reliable than Cache in Web App context)
-    const props = PropertiesService.getScriptProperties();
-    props.setProperty(result.id, JSON.stringify(result));
+    Logger.log('Result ID: ' + result.id);
+    Logger.log('Data size: ' + dataSize + ' bytes (' + (dataSize/1024).toFixed(2) + ' KB)');
 
-    // Also store as LATEST_RESULT for easy access
-    props.setProperty('LATEST_RESULT', result.id);
-    Logger.log('Stored result with ID: ' + result.id + ' and set as LATEST_RESULT');
+    // Store in Cache first (primary storage for web apps)
+    const cache = CacheService.getScriptCache();
+    cache.put(result.id, resultJson, 21600); // 6 hours
+    cache.put('LATEST_RESULT_ID', result.id, 21600);
+    Logger.log('Stored in Cache with ID: ' + result.id);
 
-    // Also store in cache as backup
+    // Try to store in PropertiesService (might fail if data > 9KB)
     try {
-      const cache = CacheService.getScriptCache();
-      cache.put(result.id, JSON.stringify(result), 21600);
+      const props = PropertiesService.getScriptProperties();
+
+      // PropertiesService has 9KB limit per property
+      if (dataSize < 9000) {
+        props.setProperty(result.id, resultJson);
+        props.setProperty('LATEST_RESULT', result.id);
+        Logger.log('Stored in PropertiesService');
+      } else {
+        Logger.log('Data too large for PropertiesService (' + dataSize + ' bytes), using Cache only');
+      }
     } catch (e) {
-      Logger.log('Cache storage failed (not critical): ' + e.toString());
+      Logger.log('PropertiesService storage failed: ' + e.toString());
     }
 
     return {
@@ -102,36 +113,49 @@ function processCalculation(inputData) {
  */
 function getCalculationResult(id) {
   try {
-    const props = PropertiesService.getScriptProperties();
+    Logger.log('getCalculationResult called with id: ' + id);
 
     // If requesting latest result, get the latest ID first
     if (id === 'LATEST_RESULT') {
-      const latestId = props.getProperty('LATEST_RESULT');
+      const cache = CacheService.getScriptCache();
+      let latestId = cache.get('LATEST_RESULT_ID');
+
+      if (!latestId) {
+        const props = PropertiesService.getScriptProperties();
+        latestId = props.getProperty('LATEST_RESULT');
+      }
+
       if (!latestId) {
         throw new Error('No recent calculation found. Please perform a calculation first.');
       }
+
       Logger.log('Latest result ID: ' + latestId);
       id = latestId;
     }
 
-    // Check PropertiesService first (more reliable)
-    const propData = props.getProperty(id);
-
-    if (propData) {
-      Logger.log('Result found in PropertiesService: ' + id);
-      return JSON.parse(propData);
-    }
-
-    // Fallback to cache
+    // Check Cache first (primary storage for web apps)
     const cache = CacheService.getScriptCache();
     const cachedData = cache.get(id);
 
     if (cachedData) {
       Logger.log('Result found in Cache: ' + id);
-      return JSON.parse(cachedData);
+      const result = JSON.parse(cachedData);
+      Logger.log('Result parsed successfully, has outputData: ' + (!!result.outputData));
+      return result;
     }
 
-    throw new Error('Result not found or expired. Please recalculate.');
+    // Fallback to PropertiesService
+    const props = PropertiesService.getScriptProperties();
+    const propData = props.getProperty(id);
+
+    if (propData) {
+      Logger.log('Result found in PropertiesService: ' + id);
+      const result = JSON.parse(propData);
+      Logger.log('Result parsed successfully, has outputData: ' + (!!result.outputData));
+      return result;
+    }
+
+    throw new Error('Result not found or expired (ID: ' + id + '). Please recalculate.');
   } catch (error) {
     Logger.log('Error in getCalculationResult: ' + error.toString());
     throw error;
