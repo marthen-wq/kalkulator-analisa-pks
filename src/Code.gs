@@ -5,10 +5,138 @@
  * Google Apps Script application untuk analisa kelayakan
  * operasional pabrik kelapa sawit
  *
- * @version 1.0.0
+ * @version 2.0.0 - Phase 2: UI/UX Implementation
  * @author Claude AI Assistant
  */
 
+
+/**
+ * ======================
+ * WEB APP FUNCTIONS
+ * ======================
+ */
+
+/**
+ * doGet - Web App Entry Point
+ * Handles routing for UI, Summary, and Cashflow pages
+ */
+function doGet(e) {
+  const page = e.parameter.page || 'input';
+
+  let template;
+  if (page === 'summary') {
+    template = HtmlService.createTemplateFromFile('Summary');
+  } else if (page === 'cashflow') {
+    template = HtmlService.createTemplateFromFile('Cashflow');
+  } else {
+    template = HtmlService.createTemplateFromFile('UI');
+  }
+
+  return template.evaluate()
+    .setTitle('Kalkulator Analisa PKS')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * include - Include HTML partials (like Styles.html)
+ */
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/**
+ * getScriptUrl - Get the web app URL
+ */
+function getScriptUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+/**
+ * processCalculation - Process calculation from UI form
+ * @param {Object} inputData - Input data from form
+ * @returns {Object} Result with success status and ID
+ */
+function processCalculation(inputData) {
+  try {
+    // Calculate all scenarios
+    const result = calculateAllScenarios(inputData);
+
+    // Store result in cache (6 hours expiration)
+    const cache = CacheService.getScriptCache();
+    cache.put(result.id, JSON.stringify(result), 21600);
+
+    return {
+      success: true,
+      id: result.id,
+      message: 'Calculation completed successfully'
+    };
+  } catch (error) {
+    Logger.log('Error in processCalculation: ' + error.toString());
+    return {
+      success: false,
+      message: error.toString()
+    };
+  }
+}
+
+/**
+ * getCalculationResult - Retrieve calculation result by ID
+ * @param {string} id - Result ID
+ * @returns {Object} Calculation result
+ */
+function getCalculationResult(id) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const cachedData = cache.get(id);
+
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    } else {
+      throw new Error('Result not found or expired. Please recalculate.');
+    }
+  } catch (error) {
+    Logger.log('Error in getCalculationResult: ' + error.toString());
+    throw error;
+  }
+}
+
+/**
+ * saveResultToDrive - Save calculation result to Google Drive
+ * @param {Object} data - Calculation result
+ * @returns {Object} Save result with file URL
+ */
+function saveResultToDrive(data) {
+  try {
+    const fileName = `${data.namaAnalisa}_${data.id}.json`;
+    const fileContent = JSON.stringify(data, null, 2);
+
+    // Get or create folder
+    const folder = getOrCreateAnalysisFolder();
+
+    // Create file
+    const file = folder.createFile(fileName, fileContent, MimeType.PLAIN_TEXT);
+
+    Logger.log('File saved: ' + fileName);
+
+    return {
+      success: true,
+      fileId: file.getId(),
+      fileName: fileName,
+      fileUrl: file.getUrl()
+    };
+  } catch (error) {
+    Logger.log('Error in saveResultToDrive: ' + error.toString());
+    throw error;
+  }
+}
+
+
+/**
+ * ======================
+ * SPREADSHEET MENU FUNCTIONS
+ * ======================
+ */
 
 /**
  * Dipanggil saat spreadsheet dibuka
@@ -16,12 +144,23 @@
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('📊 Kalkulator PKS')
-    .addItem('🧮 Run Quick Test', 'quickTest')
-    .addItem('✅ Run All Tests', 'runAllTests')
+  ui.createMenu('Kalkulator PKS')
+    .addItem('Run Quick Test', 'quickTest')
+    .addItem('Run All Tests', 'runAllTests')
     .addSeparator()
-    .addItem('📖 About', 'showAbout')
+    .addItem('Open Web App', 'openWebApp')
+    .addItem('About', 'showAbout')
     .addToUi();
+}
+
+/**
+ * openWebApp - Open web app in new tab
+ */
+function openWebApp() {
+  const url = getScriptUrl();
+  const html = '<script>window.open("' + url + '", "_blank");google.script.host.close();</script>';
+  const ui = HtmlService.createHtmlOutput(html);
+  SpreadsheetApp.getUi().showModalDialog(ui, 'Opening Web App...');
 }
 
 

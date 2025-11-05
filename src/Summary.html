@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Summary</title>
+  <?!= include('Styles'); ?>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Executive Summary</h1>
+      <p id="analisa-info">Loading...</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <h3>Optimis</h3>
+        <div class="kpi-value" id="laba-optimis">-</div>
+        <div class="kpi-label">Laba/Rugi per Bulan</div>
+        <div class="kpi-status" id="status-optimis">-</div>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Moderat</h3>
+        <div class="kpi-value" id="laba-moderat">-</div>
+        <div class="kpi-label">Laba/Rugi per Bulan</div>
+        <div class="kpi-status" id="status-moderat">-</div>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Pesimis</h3>
+        <div class="kpi-value" id="laba-pesimis">-</div>
+        <div class="kpi-label">Laba/Rugi per Bulan</div>
+        <div class="kpi-status" id="status-pesimis">-</div>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Darurat</h3>
+        <div class="kpi-value" id="laba-darurat">-</div>
+        <div class="kpi-label">Laba/Rugi per Bulan</div>
+        <div class="kpi-status" id="status-darurat">-</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h2>Perbandingan Laba/Rugi 4 Skenario</h2>
+        <canvas id="chartSkenario"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h2>Breakdown Pemasukan (Optimis)</h2>
+        <canvas id="chartPemasukan"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h2>Breakdown Pengeluaran (Optimis)</h2>
+        <canvas id="chartBiaya"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <h2>Pemasukan vs Pengeluaran</h2>
+        <canvas id="chartInOutflow"></canvas>
+      </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="table-card">
+      <h2>Detail Perhitungan per Skenario</h2>
+      <table id="detailTable">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Optimis</th>
+            <th>Moderat</th>
+            <th>Pesimis</th>
+            <th>Darurat</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button class="btn-primary" onclick="viewCashflow()">Lihat Cashflow 12 Bulan</button>
+      <button class="btn-secondary" onclick="saveToDrive()">Simpan ke Drive</button>
+      <button class="btn-tertiary" onclick="backToInput()">Kembali ke Input</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" style="display:none">
+      <div class="spinner"></div>
+      <p id="loading-message">Loading...</p>
+    </div>
+  </div>
+
+  <script>
+    let results = null;
+
+    // Get result ID from URL
+    function getResultId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+
+    // Load results from server
+    function loadResults() {
+      const resultId = getResultId();
+      if (!resultId) {
+        alert('No result ID found');
+        backToInput();
+        return;
+      }
+
+      showLoading('Memuat hasil analisa...');
+
+      google.script.run
+        .withSuccessHandler(onLoadSuccess)
+        .withFailureHandler(onLoadFailure)
+        .getCalculationResult(resultId);
+    }
+
+    function onLoadSuccess(data) {
+      hideLoading();
+
+      if (!data || !data.outputData) {
+        alert('Data tidak ditemukan');
+        backToInput();
+        return;
+      }
+
+      results = data;
+
+      // Populate UI
+      document.getElementById('analisa-info').textContent =
+        data.namaAnalisa + ' - ' + data.lokasi + ' (' + data.tanggal + ')';
+
+      populateKPICards();
+      createChartSkenario();
+      createChartPemasukan();
+      createChartBiaya();
+      createChartInOutflow();
+      populateTable();
+    }
+
+    function onLoadFailure(error) {
+      hideLoading();
+      alert('Error loading data: ' + error.message);
+      console.error(error);
+    }
+
+    function populateKPICards() {
+      ['optimis', 'moderat', 'pesimis', 'darurat'].forEach(skenario => {
+        const data = results.outputData[skenario];
+        document.getElementById(`laba-${skenario}`).textContent = formatRupiah(data.labaRugi.perBulan);
+        document.getElementById(`status-${skenario}`).textContent = data.labaRugi.status;
+        document.getElementById(`status-${skenario}`).className =
+          `kpi-status ${data.labaRugi.status === 'LABA' ? 'profit' : 'loss'}`;
+      });
+    }
+
+    function createChartSkenario() {
+      const ctx = document.getElementById('chartSkenario').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Optimis', 'Moderat', 'Pesimis', 'Darurat'],
+          datasets: [{
+            label: 'Laba/Rugi (Miliar Rp)',
+            data: [
+              results.outputData.optimis.labaRugi.perBulan / 1000000000,
+              results.outputData.moderat.labaRugi.perBulan / 1000000000,
+              results.outputData.pesimis.labaRugi.perBulan / 1000000000,
+              results.outputData.darurat.labaRugi.perBulan / 1000000000
+            ],
+            backgroundColor: function(context) {
+              const value = context.parsed.y;
+              return value >= 0 ? '#10b981' : '#ef4444';
+            },
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(2);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function createChartPemasukan() {
+      const ctx = document.getElementById('chartPemasukan').getContext('2d');
+      const data = results.outputData.optimis.cashInflow.breakdown;
+
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['CPO', 'Kernel', 'Cangkang'],
+          datasets: [{
+            data: [
+              data.cpo.persentase,
+              data.kernel.persentase,
+              data.cangkang.persentase
+            ],
+            backgroundColor: ['#ef4444', '#3b82f6', '#f59e0b']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.label + ': ' + context.parsed.toFixed(2) + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function createChartBiaya() {
+      const ctx = document.getElementById('chartBiaya').getContext('2d');
+      const data = results.outputData.optimis.cashOutflow;
+
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Biaya Tetap', 'Biaya Variable', 'Overhead'],
+          datasets: [{
+            data: [
+              data.biayaTetap.subtotal,
+              data.biayaVariable.subtotal,
+              data.biayaOverhead.total
+            ],
+            backgroundColor: ['#ef4444', '#3b82f6', '#f59e0b']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.label + ': ' + formatRupiah(context.parsed);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function createChartInOutflow() {
+      const ctx = document.getElementById('chartInOutflow').getContext('2d');
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Optimis', 'Moderat', 'Pesimis', 'Darurat'],
+          datasets: [
+            {
+              label: 'Pemasukan (Miliar Rp)',
+              data: [
+                results.outputData.optimis.cashInflow.totalPerBulan / 1000000000,
+                results.outputData.moderat.cashInflow.totalPerBulan / 1000000000,
+                results.outputData.pesimis.cashInflow.totalPerBulan / 1000000000,
+                results.outputData.darurat.cashInflow.totalPerBulan / 1000000000
+              ],
+              backgroundColor: '#10b981'
+            },
+            {
+              label: 'Pengeluaran (Miliar Rp)',
+              data: [
+                results.outputData.optimis.cashOutflow.totalPerBulan / 1000000000,
+                results.outputData.moderat.cashOutflow.totalPerBulan / 1000000000,
+                results.outputData.pesimis.cashOutflow.totalPerBulan / 1000000000,
+                results.outputData.darurat.cashOutflow.totalPerBulan / 1000000000
+              ],
+              backgroundColor: '#ef4444'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toFixed(2);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function populateTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      const rows = [
+        {
+          label: 'Jam Operasional',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            results.outputData[s].jamOperasional + ' jam/hari'
+          )
+        },
+        {
+          label: 'TBS Olah (ton/bulan)',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            formatNumber(results.outputData[s].kebutuhanTBS.perBulan.kg / 1000)
+          )
+        },
+        {
+          label: 'CPO/HACPO (ton/bulan)',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            formatNumber(results.outputData[s].produksi.cpo.perBulan.kg / 1000)
+          )
+        },
+        {
+          label: 'Total Pemasukan',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            formatRupiah(results.outputData[s].cashInflow.totalPerBulan)
+          )
+        },
+        {
+          label: 'Total Pengeluaran',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            formatRupiah(results.outputData[s].cashOutflow.totalPerBulan)
+          )
+        },
+        {
+          label: 'Laba/Rugi per Bulan',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            formatRupiah(results.outputData[s].labaRugi.perBulan)
+          )
+        },
+        {
+          label: 'Laba/Rugi per Tahun',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            formatRupiah(results.outputData[s].labaRugi.perTahun)
+          )
+        },
+        {
+          label: 'Status',
+          values: ['optimis', 'moderat', 'pesimis', 'darurat'].map(s =>
+            results.outputData[s].labaRugi.status
+          )
+        }
+      ];
+
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${row.label}</strong></td>${row.values.map(v => `<td>${v}</td>`).join('')}`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function formatRupiah(number) {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+      }).format(number);
+    }
+
+    function formatNumber(number) {
+      return new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }).format(number);
+    }
+
+    function saveToDrive() {
+      if (!results) return;
+
+      showLoading('Menyimpan ke Google Drive...');
+
+      google.script.run
+        .withSuccessHandler(function() {
+          hideLoading();
+          alert('Berhasil disimpan ke Google Drive!');
+        })
+        .withFailureHandler(function(err) {
+          hideLoading();
+          alert('Error: ' + err.message);
+        })
+        .saveResultToDrive(results);
+    }
+
+    function viewCashflow() {
+      if (!results) return;
+      const url = '<?= getScriptUrl(); ?>?page=cashflow&id=' + encodeURIComponent(results.id);
+      window.top.location.href = url;
+    }
+
+    function backToInput() {
+      window.top.location.href = '<?= getScriptUrl(); ?>';
+    }
+
+    function showLoading(message) {
+      document.getElementById('loading-message').textContent = message;
+      document.getElementById('loading-overlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading-overlay').style.display = 'none';
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+      loadResults();
+    });
+  </script>
+</body>
+</html>
